@@ -219,7 +219,7 @@ The latter are the rest of declarations.
   
   (defun expand-with-expansion (macro-name vars args body declarations)
     "Expands a WITH expansion."
-    (handler-case (exp:expand 'with `(,macro-name ,vars ,args ,body ,declarations))
+    (handler-case (exp:expand 'with macro-name vars args body declarations)
       (error (c)
         (error "Error expanding the WITH expansion ~a:~%~a" macro-name c))))
 
