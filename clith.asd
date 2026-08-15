@@ -17,5 +17,4 @@
 ;;   :depends-on ("clith")
 ;;   :components ((:module "scribble"
 ;;                 :components ((:file "package")
-;;                              (:scribble "reference")
 ;;                              (:scribble "README")))))

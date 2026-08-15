@@ -11,9 +11,9 @@ Welcome to Clith!
 
 @subtitle{Introduction}
 
-This library defines the macro @fref[with] and a more relaxed version @fref[with*].
+This library defines the macro @fref[with].
 
-These macros aim to encapsulate every kind of @code{WITH-} macro into one. 
+This macro aims to encapsulate every kind of @code{WITH-} macro into one. 
 
 @code-block[:lang "common-lisp"]{
   (with ((file (open "~/file.txt" :direction :output)))
@@ -23,25 +23,24 @@ These macros aim to encapsulate every kind of @code{WITH-} macro into one.
 @fref[with] is powerful enough to support almost every @code{WITH-} macro:
 
 @example|{
-(defwith slots (vars (object) body)
+(defwith slots (vars body object)
   `(with-slots ,vars ,object
      ,@body))
 
 (defstruct 3d-vector x y z)
 
-;; WITH* accepts regular bindings
-(with* ((p (make-3d-vector :x 1 :y 2 :z 3))
-        ((z (up y) x) (slots p)))
-  (+ x up z))
+(let ((p (make-3d-vector :x 1 :y 2 :z 3)))
+  (with (((z (up y) x) (slots p)))
+    (+ x up z)))
 }|
 
 It supports declarations:
 
 @example{
-(with* (((x y z) (values 1 2 3))
-        ((a b c) (values 'a 'b 'c)))
-  (declare (ignore a y c))
-  (values x b z))
+(let ((p (make-3d-vector :x 1 :y 2 :z 3)))
+  (with (((x y z) (slots p)))
+    (declare (ignore x z))
+    (values y)))
 }
 
 And it detects macros and symbol-macros:
@@ -59,7 +58,7 @@ And it detects macros and symbol-macros:
 ]
 @code-block[:lang "sh"]{
 cd ~/common-lisp
-git clone https://github.com/Hectarea1996/clith.git
+git clone https://github.com/HectareaGalbis/clith.git
 }
 @itemize[
 @item{Quicklisp:}
@@ -68,15 +67,9 @@ git clone https://github.com/Hectarea1996/clith.git
 (ql:quickload "clith")
 }
 
-@subtitle{Reference}
-
-@itemize[
-        @item{@tref[reference]}
-]
-
 @subtitle{Getting started}
 
-The macros @fref[with] and @fref[with*] uses @code{WITH expansions} in a similar way to @code{setf}. These expansions control how these macros are expanded. 
+The macro @fref[with] uses @code{WITH expansions} in a similar way to @code{setf}. These expansions control how this macro is expanded. 
 
 @example{
 (let (some-stream)
@@ -86,15 +79,6 @@ The macros @fref[with] and @fref[with*] uses @code{WITH expansions} in a similar
     (format t "Stream opened? ~s~%" (open-stream-p some-stream)))
 
   (format t "Stream opened after? ~s" (open-stream-p some-stream)))
-}
-
-@fref[with*] can be used as @clref[let] or @clref[multiple-value-bind] as well:
-
-@example{
-(with* (x
-        (y 3)
-        ((q r) (floor 4 5)))
-  (values x y q r))
 }
 
 Every Common Lisp function that creates an object that should be closed/destroyed has a @code{WITH expansion} defined by @code{CLITH}. For example, functions like @clref[open] or @clref[make-two-way-stream] have a @code{WITH expansion}. See all the functions in the @tref[cl-symbols]{reference}.
@@ -111,10 +95,10 @@ Also, we can check if a symbol denotes a @code{WITH expansion} using @fref[withp
 
 In order to extend the macro @fref[with] we need to define a @code{WITH expansion}. To do so, we use @fref[defwith].
 
-Suppose we have @code{(MAKE-WINDOW TITLE)} and @code{(DESTROY-WINDOW WINDOW)}. We want to control the expansion of @fref[with] and/or @fref[with*] in order to use both functions. Let's define the WITH expansion:
+Suppose we have @code{(MAKE-WINDOW TITLE)} and @code{(DESTROY-WINDOW WINDOW)}. We want to control the expansion of @fref[with] in order to use both functions. Let's define the WITH expansion:
 
 @example|{
-(defwith make-window ((window) (title) body)
+(defwith make-window ((window) body title)
   "Makes a window that will be destroyed after the end of WITH."
   (let ((window-var (gensym)))
     `(let ((,window-var (make-window ,title)))
@@ -141,7 +125,7 @@ After the evaluation of the body, @code{my-window} will be destroyed by @code{de
 There are @code{WITH-} macros that doesn't return anything. They just initialize something that should be finalized at the end. Imagine that we have the functions @code{INIT-SUBSYSTEM} and @code{FINALIZE-SUBSYSTEM}. Let's define a @code{WITH expansion} that calls to @code{FINALIZE-SUBSYSTEM}:
 
 @code-block[:lang "common-lisp"]|{
-(defwith init-subsystem (() () body) ; <- No variables to bind and no arguments.
+(defwith init-subsystem (() body) ; <- No variables to bind and no arguments.
   "Initialize the subsystem and finalize it at the end of WITH."
   `(progn
      (init-subsystem)
@@ -172,7 +156,7 @@ We want to achieve something like this:
 In order to do this, we are using @clref[gensym]:
 
 @example|{
-(defwith gensyms (vars () body)
+(defwith gensyms (vars body)
   (let* ((list-vars (mapcar #'alexandria:ensure-list vars))
          (sym-vars (mapcar #'car list-vars))
          (prefixes (mapcar #'cdr list-vars))
@@ -232,27 +216,23 @@ Let's see the expanded code:
 
 Observe that the declarations are in the right place. Every symbol that can be bound is a candidate for a declaration. If more that one candidate is found (same symbol appearing more than once) the last one is selected.
 
-On the other side, while defining a new @code{WITH} expansion, declarations are included in the @code{body} argument. All the examples above consider that @code{body} can contain declarations. However, an extra optional argument can be specified on @fref[defwith] to receive declarations separately.
 
-Taking back the @code{MAKE-WINDOW} example, the following two definitions are equivalent:
+@subtitle[:tag cl-symbols]{Built-in WITH expansions}
 
-@code-block[:lang "common-lisp"]|{
-(defwith make-window ((window) (title) body)
-  "Makes a window that will be destroyed after the end of WITH."
-  (let ((window-var (gensym)))
-    `(let ((,window-var (make-window ,title)))
-       (unwind-protect
-           (let ((,window ,window-var))
-             ,@body)                     ; <-- Body containing declarations
-         (destroy-window ,window-var)))))
+The following Common Lisp functions have a @code{WITH expansion}:
 
-(defwith make-window ((window) (title) body declarations) ; <-- Receiving declarations separately
-  "Makes a window that will be destroyed after the end of WITH."
-  (let ((window-var (gensym)))
-    `(let ((,window-var (make-window ,title)))
-       (unwind-protect
-           (let ((,window ,window-var))
-             ,@declarations             ; <-- Expanding declarations here
-             ,@body)
-         (destroy-window ,window-var)))))
-}|
+@itemize[
+        @item{@code{make-broadcast-stream}}
+        @item{@code{make-concatenated-stream}}
+        @item{@code{make-echo-stream}}
+        @item{@code{make-string-input-stream}}
+        @item{@code{make-string-output-stream}}
+        @item{@code{make-synonym-stream}}
+        @item{@code{make-two-way-stream}}
+        @item{@code{open}}
+]
+
+@subtitle{Reference}
+
+@function-glossary[clith]
+

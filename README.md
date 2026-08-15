@@ -1,47 +1,47 @@
 
 
-<a id="TITLE:CLITH-DOCS:TAG6"></a>
+<a id="TITLE:CLITH-DOCS:TAG1"></a>
 # Common Lisp wITH
 
 Welcome to Clith\!
 
-* [Introduction](/README.md#TITLE:CLITH-DOCS:TAG7)
-* [Installation](/README.md#TITLE:CLITH-DOCS:TAG8)
-* [Reference](/README.md#TITLE:CLITH-DOCS:TAG9)
-* [Getting started](/README.md#TITLE:CLITH-DOCS:TAG10)
-* [Defining a WITH expansion](/README.md#TITLE:CLITH-DOCS:TAG11)
-  * [Simple example\: MAKE\-WINDOW](/README.md#TITLE:CLITH-DOCS:TAG12)
-  * [No need to return a value\: INIT\-SUBSYSTEM](/README.md#TITLE:CLITH-DOCS:TAG13)
-  * [Extended syntax\: GENSYMS](/README.md#TITLE:CLITH-DOCS:TAG14)
-* [Documentation](/README.md#TITLE:CLITH-DOCS:TAG15)
-* [Declarations](/README.md#TITLE:CLITH-DOCS:TAG16)
+* [Introduction](/README.md#TITLE:CLITH-DOCS:TAG2)
+* [Installation](/README.md#TITLE:CLITH-DOCS:TAG3)
+* [Getting started](/README.md#TITLE:CLITH-DOCS:TAG4)
+* [Defining a WITH expansion](/README.md#TITLE:CLITH-DOCS:TAG5)
+  * [Simple example\: MAKE\-WINDOW](/README.md#TITLE:CLITH-DOCS:TAG6)
+  * [No need to return a value\: INIT\-SUBSYSTEM](/README.md#TITLE:CLITH-DOCS:TAG7)
+  * [Extended syntax\: GENSYMS](/README.md#TITLE:CLITH-DOCS:TAG8)
+* [Documentation](/README.md#TITLE:CLITH-DOCS:TAG9)
+* [Declarations](/README.md#TITLE:CLITH-DOCS:TAG10)
+* [Built\-in WITH expansions](/README.md#TITLE:CLITH-DOCS:CL-SYMBOLS)
+* [Reference](/README.md#TITLE:CLITH-DOCS:TAG11)
 
 
-<a id="TITLE:CLITH-DOCS:TAG7"></a>
+<a id="TITLE:CLITH-DOCS:TAG2"></a>
 ## Introduction
 
-This library defines the macro [clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) and a more relaxed version [clith\:with\*](/docs/scribble/reference.md#FUNCTION:CLITH:WITH*)\.
+This library defines the macro [clith\:with](/README.md#FUNCTION:CLITH:WITH)\.
 
-These macros aim to encapsulate every kind of ```WITH-``` macro into one\.
+This macro aims to encapsulate every kind of ```WITH-``` macro into one\.
 
 `````common-lisp
 (with ((file (open "~/file.txt" :direction :output)))
   (print "Hello Clith!" file))
 `````
 
-[clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) is powerful enough to support almost every ```WITH-``` macro\:
+[clith\:with](/README.md#FUNCTION:CLITH:WITH) is powerful enough to support almost every ```WITH-``` macro\:
 
 `````common-lisp
-(defwith slots (vars (object) body)
+(defwith slots (vars body object)
   `(with-slots ,vars ,object
      ,@body))
 
 (defstruct 3d-vector x y z)
 
-;; WITH* accepts regular bindings
-(with* ((p (make-3d-vector :x 1 :y 2 :z 3))
-        ((z (up y) x) (slots p)))
-  (+ x up z))
+(let ((p (make-3d-vector :x 1 :y 2 :z 3)))
+  (with (((z (up y) x) (slots p)))
+    (+ x up z)))
 `````
 `````common-lisp
 ;; Returns
@@ -51,16 +51,14 @@ These macros aim to encapsulate every kind of ```WITH-``` macro into one\.
 It supports declarations\:
 
 `````common-lisp
-(with* (((x y z) (values 1 2 3))
-        ((a b c) (values 'a 'b 'c)))
-  (declare (ignore a y c))
-  (values x b z))
+(let ((p (make-3d-vector :x 1 :y 2 :z 3)))
+  (with (((x y z) (slots p)))
+    (declare (ignore x z))
+    (values y)))
 `````
 `````common-lisp
 ;; Returns
-1
-B
-3
+2
 `````
 
 And it detects macros and symbol\-macros\:
@@ -72,17 +70,17 @@ And it detects macros and symbol\-macros\:
 `````
 `````common-lisp
 ;; Returns
-"Hello Clith!"
+"Hola mundo"
 `````
 
-<a id="TITLE:CLITH-DOCS:TAG8"></a>
+<a id="TITLE:CLITH-DOCS:TAG3"></a>
 ## Installation
 
 * Manual\:
 
 `````sh
 cd ~/common-lisp
-git clone https://github.com/Hectarea1996/clith.git
+git clone https://github.com/HectareaGalbis/clith.git
 `````
 * Quicklisp\:
 
@@ -90,16 +88,10 @@ git clone https://github.com/Hectarea1996/clith.git
 (ql:quickload "clith")
 `````
 
-<a id="TITLE:CLITH-DOCS:TAG9"></a>
-## Reference
-
-* [Reference](/docs/scribble/reference.md#TITLE:CLITH-DOCS:REFERENCE)
-
-
-<a id="TITLE:CLITH-DOCS:TAG10"></a>
+<a id="TITLE:CLITH-DOCS:TAG4"></a>
 ## Getting started
 
-The macros [clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) and [clith\:with\*](/docs/scribble/reference.md#FUNCTION:CLITH:WITH*) uses ```WITH expansions``` in a similar way to ```setf```\. These expansions control how these macros are expanded\.
+The macro [clith\:with](/README.md#FUNCTION:CLITH:WITH) uses ```WITH expansions``` in a similar way to ```setf```\. These expansions control how this macro is expanded\.
 
 `````common-lisp
 (let (some-stream)
@@ -120,25 +112,9 @@ Stream opened after? NIL
 NIL
 `````
 
-[clith\:with\*](/docs/scribble/reference.md#FUNCTION:CLITH:WITH*) can be used as [let](http://www.lispworks.com/reference/HyperSpec/Body/s_let_l.htm) or [multiple\-value\-bind](http://www.lispworks.com/reference/HyperSpec/Body/m_multip.htm) as well\:
+Every Common Lisp function that creates an object that should be closed\/destroyed has a ```WITH expansion``` defined by ```CLITH```\. For example\, functions like [open](http://www.lispworks.com/reference/HyperSpec/Body/f_open.htm) or [make\-two\-way\-stream](http://www.lispworks.com/reference/HyperSpec/Body/f_mk_two.htm) have a ```WITH expansion```\. See all the functions in the [reference](/README.md#TITLE:CLITH-DOCS:CL-SYMBOLS)\.
 
-`````common-lisp
-(with* (x
-        (y 3)
-        ((q r) (floor 4 5)))
-  (values x y q r))
-`````
-`````common-lisp
-;; Returns
-NIL
-3
-0
-4
-`````
-
-Every Common Lisp function that creates an object that should be closed\/destroyed has a ```WITH expansion``` defined by ```CLITH```\. For example\, functions like [open](http://www.lispworks.com/reference/HyperSpec/Body/f_open.htm) or [make\-two\-way\-stream](http://www.lispworks.com/reference/HyperSpec/Body/f_mk_two.htm) have a ```WITH expansion```\. See all the functions in the [reference](/docs/scribble/reference.md#TITLE:CLITH-DOCS:CL-SYMBOLS)\.
-
-Also\, we can check if a symbol denotes a ```WITH expansion``` using [clith\:withp](/docs/scribble/reference.md#FUNCTION:CLITH:WITHP)\:
+Also\, we can check if a symbol denotes a ```WITH expansion``` using [clith\:withp](/README.md#FUNCTION:CLITH:WITHP)\:
 
 `````common-lisp
 (withp 'open)
@@ -148,18 +124,18 @@ Also\, we can check if a symbol denotes a ```WITH expansion``` using [clith\:wit
 T
 `````
 
-<a id="TITLE:CLITH-DOCS:TAG11"></a>
+<a id="TITLE:CLITH-DOCS:TAG5"></a>
 ## Defining a WITH expansion
 
-<a id="TITLE:CLITH-DOCS:TAG12"></a>
+<a id="TITLE:CLITH-DOCS:TAG6"></a>
 ### Simple example\: MAKE\-WINDOW
 
-In order to extend the macro [clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) we need to define a ```WITH expansion```\. To do so\, we use [clith\:defwith](/docs/scribble/reference.md#FUNCTION:CLITH:DEFWITH)\.
+In order to extend the macro [clith\:with](/README.md#FUNCTION:CLITH:WITH) we need to define a ```WITH expansion```\. To do so\, we use [clith\:defwith](/README.md#FUNCTION:CLITH:DEFWITH)\.
 
-Suppose we have ```(MAKE-WINDOW TITLE)``` and ```(DESTROY-WINDOW WINDOW)```\. We want to control the expansion of [clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) and\/or [clith\:with\*](/docs/scribble/reference.md#FUNCTION:CLITH:WITH*) in order to use both functions\. Let\'s define the WITH expansion\:
+Suppose we have ```(MAKE-WINDOW TITLE)``` and ```(DESTROY-WINDOW WINDOW)```\. We want to control the expansion of [clith\:with](/README.md#FUNCTION:CLITH:WITH) in order to use both functions\. Let\'s define the WITH expansion\:
 
 `````common-lisp
-(defwith make-window ((window) (title) body)
+(defwith make-window ((window) body title)
   "Makes a window that will be destroyed after the end of WITH."
   (let ((window-var (gensym)))
     `(let ((,window-var (make-window ,title)))
@@ -185,13 +161,13 @@ Now we can use our expansion\:
 
 After the evaluation of the body\, ```my-window``` will be destroyed by ```destroy-window```\.
 
-<a id="TITLE:CLITH-DOCS:TAG13"></a>
+<a id="TITLE:CLITH-DOCS:TAG7"></a>
 ### No need to return a value\: INIT\-SUBSYSTEM
 
 There are ```WITH-``` macros that doesn\'t return anything\. They just initialize something that should be finalized at the end\. Imagine that we have the functions ```INIT-SUBSYSTEM``` and ```FINALIZE-SUBSYSTEM```\. Let\'s define a ```WITH expansion``` that calls to ```FINALIZE-SUBSYSTEM```\:
 
 `````common-lisp
-(defwith init-subsystem (() () body) ; <- No variables to bind and no arguments.
+(defwith init-subsystem (() body) ; <- No variables to bind and no arguments.
   "Initialize the subsystem and finalize it at the end of WITH."
   `(progn
      (init-subsystem)
@@ -207,7 +183,7 @@ Now we don\'t need to worry about finalizing the subsystem\:
   ...)
 `````
 
-<a id="TITLE:CLITH-DOCS:TAG14"></a>
+<a id="TITLE:CLITH-DOCS:TAG8"></a>
 ### Extended syntax\: GENSYMS
 
 Some ```WITH-``` macros like [with\-slots](http://www.lispworks.com/reference/HyperSpec/Body/m_w_slts.htm) allow to specify some options to variables\. Let\'s try to make a ```WITH``` expansion that works like ```alexandria:with-gensyms```\. Each variable should optionally accept the prefix for the fresh generated symbol\.
@@ -223,7 +199,7 @@ We want to achieve something like this\:
 In order to do this\, we are using [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm)\:
 
 `````common-lisp
-(defwith gensyms (vars () body)
+(defwith gensyms (vars body)
   (let* ((list-vars (mapcar #'alexandria:ensure-list vars))
          (sym-vars (mapcar #'car list-vars))
          (prefixes (mapcar #'cdr list-vars))
@@ -250,13 +226,13 @@ Let\'s try it out\:
 `````
 `````common-lisp
 ;; Returns
-(#:X341 #:Y342 #:Z343 #:CUSTOM-A344 #:CUSTOM-B345 #:C346)
+(#:X281 #:Y282 #:Z283 #:CUSTOM-A284 #:CUSTOM-B285 #:C286)
 `````
 
-<a id="TITLE:CLITH-DOCS:TAG15"></a>
+<a id="TITLE:CLITH-DOCS:TAG9"></a>
 ## Documentation
 
-The macro [clith\:defwith](/docs/scribble/reference.md#FUNCTION:CLITH:DEFWITH) accepts a docstring that can be retrieved with the function [documentation](http://www.lispworks.com/reference/HyperSpec/Body/f_docume.htm)\. Check out again the definition of the expansion of ```make-window``` above\. Note that we wrote a docstring\.
+The macro [clith\:defwith](/README.md#FUNCTION:CLITH:DEFWITH) accepts a docstring that can be retrieved with the function [documentation](http://www.lispworks.com/reference/HyperSpec/Body/f_docume.htm)\. Check out again the definition of the expansion of ```make-window``` above\. Note that we wrote a docstring\.
 
 `````common-lisp
 (documentation 'make-window 'with)
@@ -278,10 +254,10 @@ We can also ```setf``` the docstring\:
 `````
 
 
-<a id="TITLE:CLITH-DOCS:TAG16"></a>
+<a id="TITLE:CLITH-DOCS:TAG10"></a>
 ## Declarations
 
-The macro [clith\:with](/docs/scribble/reference.md#FUNCTION:CLITH:WITH) accepts declarations\. These declarations are moved to the correct place at expansion time\. For example\, imagine we want to open two windows\, but the variables can be ignored\:
+The macro [clith\:with](/README.md#FUNCTION:CLITH:WITH) accepts declarations\. These declarations are moved to the correct place at expansion time\. For example\, imagine we want to open two windows\, but the variables can be ignored\:
 
 `````common-lisp
 (with ((w1 (make-window "Window 1"))
@@ -300,43 +276,133 @@ Let\'s see the expanded code\:
 `````
 `````common-lisp
 ;; Returns
-(LET ((#:G358 (MAKE-WINDOW "Window 1")))
+(LET ((#:G298 (MAKE-WINDOW "Window 1")))
   (UNWIND-PROTECT
-      (LET ((W1 #:G358))
+      (LET ((W1 #:G298))
         (DECLARE (IGNORABLE W1))
-        (LET ((#:G355 (MAKE-WINDOW "Window 2")))
+        (LET ((#:G297 (MAKE-WINDOW "Window 2")))
           (UNWIND-PROTECT
-              (LET ((W2 #:G355))
+              (LET ((W2 #:G297))
                 (DECLARE (IGNORABLE W2))
                 (PRINT "Hello world!"))
-            (DESTROY-WINDOW #:G355))))
-    (DESTROY-WINDOW #:G358)))
+            (DESTROY-WINDOW #:G297))))
+    (DESTROY-WINDOW #:G298)))
 T
 `````
 
 Observe that the declarations are in the right place\. Every symbol that can be bound is a candidate for a declaration\. If more that one candidate is found \(same symbol appearing more than once\) the last one is selected\.
 
-On the other side\, while defining a new ```WITH``` expansion\, declarations are included in the ```body``` argument\. All the examples above consider that ```body``` can contain declarations\. However\, an extra optional argument can be specified on [clith\:defwith](/docs/scribble/reference.md#FUNCTION:CLITH:DEFWITH) to receive declarations separately\.
 
-Taking back the ```MAKE-WINDOW``` example\, the following two definitions are equivalent\:
+<a id="TITLE:CLITH-DOCS:CL-SYMBOLS"></a>
+## Built\-in WITH expansions
 
-`````common-lisp
-(defwith make-window ((window) (title) body)
-  "Makes a window that will be destroyed after the end of WITH."
-  (let ((window-var (gensym)))
-    `(let ((,window-var (make-window ,title)))
-       (unwind-protect
-           (let ((,window ,window-var))
-             ,@body)                     ; <-- Body containing declarations
-         (destroy-window ,window-var)))))
+The following Common Lisp functions have a ```WITH expansion```\:
 
-(defwith make-window ((window) (title) body declarations) ; <-- Receiving declarations separately
-  "Makes a window that will be destroyed after the end of WITH."
-  (let ((window-var (gensym)))
-    `(let ((,window-var (make-window ,title)))
-       (unwind-protect
-           (let ((,window ,window-var))
-             ,@declarations             ; <-- Expanding declarations here
-             ,@body)
-         (destroy-window ,window-var)))))
+* ```make-broadcast-stream```
+* ```make-concatenated-stream```
+* ```make-echo-stream```
+* ```make-string-input-stream```
+* ```make-string-output-stream```
+* ```make-synonym-stream```
+* ```make-two-way-stream```
+* ```open```
+
+
+<a id="TITLE:CLITH-DOCS:TAG11"></a>
+## Reference
+
+<a id="FUNCTION:CLITH:DEFWITH"></a>
+<a id="FUNCTION:CLITH-DOCS:TAG12"></a>
+#### Macro: clith\:defwith \(name args \&body body\)
+
+`````text
+Define a WITH expansion. A WITH expansion controls how the macro WITH is expanded. This macro has
+the following syntax:
+
+  (DEFWITH name (vars args with-body [with-declaration]) declaration* body*)
+
+  name              ::= symbol
+  args              ::= macro-lambda-list
+  body              ::= form
+
+When using (NAME ARGS*) inside the macro WITH, it will expand to the value returned by DEFWITH.
+ARGS must indicate at least 2 required arguments being:
+  1. The list of variables to bound. Each element of the list can have the form {var | (var var-option*)} where
+     var is a symbol and var-option can be any form.
+  2. The body of the WITH macro.
+Keep in mind that the second argument can contain declarations.
+
+As an example, let's define the with expansion MY-FILE. We will make WITH to be expanded to WITH-OPEN-FILE.
+
+  (defwith my-file ((stream) body filespec &rest options)
+    "Open a file."
+    `(with-open-file (,stream ,filespec ,@options)
+       ,@body))
+
+In this example, as VARS is always a list, we can use destructuring to retrieve directly the variable to bound.
+Also, we are assuming here that no additional options are passed with the variable.
+
+Now, using WITH:
+
+  (with ((file (my-file "~/file.txt" :direction :output)))
+    (print "Hey!" file))
+
+Finally, note that we put a docstring when we defined MY-FILE. We can retrieve it with DOCUMENTATION:
+
+  (documentation 'my-file 'with)  ;; --> "Open a file."
+`````
+
+<a id="FUNCTION:CLITH:WITH"></a>
+<a id="FUNCTION:CLITH-DOCS:TAG13"></a>
+#### Macro: clith\:with \(bindings \&body body\)
+
+`````text
+This macro has the following systax:
+
+  (WITH (binding*) declaration* form*)
+
+  binding          ::= ([vars] form)
+  vars             ::= symbol | (var-with-options*)
+  var-with-options ::= symbol | (symbol var-option*)
+  var-option       ::= form
+
+WITH accepts a list of binding clauses. Each binding clause can be a symbol or a list. Depending on
+this, the behaeviour of WITH is slightly different:
+
+  - A list with one element. That element must be a WITH expansion. The expansion is expanded
+     according to DEFWITH. In this case, the WITH expansion will receive NIL as the list of variables to bound.
+
+      (with (((init-video-system)))  ; Possible expansion that should finalize the video system at the end
+        ;; Doing video stuff
+        )
+
+  - A list with two elements: The first element must be a symbol or a list of symbols with
+    or without options. The second element must be a WITH expansion:
+
+      (with ((my-file (open "~/my-file.txt")))  ; Expanded to WITH-OPEN-FILE
+        ...)
+
+Each variable in a binding clause can have options. These options should be used inside DEFWITH
+ to control the expansion with better precision:
+
+      (defwith slots (vars (object) body)
+        `(with-slots ,vars ,object
+           ,@body))
+
+      (defstruct 3d-vector x y z)
+
+      (with ((v (make-3d-vector :x 1 :y 2 :z 3))
+             ((x (up y) z) (slots v)))
+        (+ x up z))
+
+Macros and symbol-macros are treated specially. If a macro or symbol-macro is used, they
+will be expanded with MACROEXPAND-1 and its result must be a WITH expansion.
+`````
+
+<a id="FUNCTION:CLITH:WITHP"></a>
+<a id="FUNCTION:CLITH-DOCS:TAG14"></a>
+#### Function: clith\:withp \(sym\)
+
+`````text
+Checks wether a symbol denotes a WITH expansion.
 `````

@@ -1,7 +1,6 @@
 
 (defpackage #:clith
-  (:use #:cl #:alexandria)
+  (:use #:cl #:alexandria #:expanders)
   (:export #:defwith
            #:withp
-           #:with
-           #:with*))
+           #:with))
